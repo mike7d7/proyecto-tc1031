@@ -12,8 +12,8 @@ public:
   User(uint32_t user_id, double pp_value)
       : user_id(user_id), pp_value(pp_value) {};
 
-  uint32_t get_user_id();
-  double get_pp_value();
+  uint32_t get_user_id() const;
+  double get_pp_value() const;
 };
 
 #endif
