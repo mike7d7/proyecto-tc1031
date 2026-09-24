@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <rapidcsv.h>
 #include <sstream>
@@ -63,6 +64,15 @@ std::string print_users(const std::vector<User> &users) {
   return output_string.str();
 }
 
+void sort_users_by_skill(std::vector<User> &users) {
+  std::sort(users.begin(), users.end(), [](const User &a, const User &b) {
+    if (a.get_pp_value() != b.get_pp_value()) {
+      return a.get_pp_value() < b.get_pp_value();
+    }
+    return a.get_playtime() < b.get_playtime();
+  });
+}
+
 int main() {
   rapidcsv::Document doc("csv/osu_user_stats_202609212000.csv");
   rapidcsv::Document sample_users("csv/sample_users_202609212000.csv",
@@ -104,6 +114,37 @@ int main() {
           });
       if (found_user != users.end()) {
         std::cout << found_user->get_user_info() << std::endl;
+      } else {
+        std::cout << "El usuario con ID: " << user_to_find << " no existe."
+                  << std::endl;
+      }
+      enter_to_continue();
+      break;
+    }
+    case 3: {
+      clear();
+      std::cout << "Ingresa el ID del usuario: ";
+      uint32_t user_to_find = get_int(0, INT32_MAX);
+
+      auto found_user =
+          std::find_if(users.begin(), users.end(), [&](const User &u) {
+            return u.get_user_id() == user_to_find;
+          });
+      if (found_user != users.end()) {
+        sort_users_by_skill(users);
+        found_user =
+            std::find_if(users.begin(), users.end(), [&](const User &u) {
+              return u.get_user_id() == user_to_find;
+            });
+        int user_index = std::distance(users.begin(), found_user);
+        int rival_index;
+        if (user_index > 0) {
+          rival_index = user_index - 1;
+        } else {
+          rival_index = user_index + 1;
+        }
+        std::cout << "Rival seleccionado: " << std::endl
+                  << users[rival_index].get_user_info() << std::endl;
       } else {
         std::cout << "El usuario con ID: " << user_to_find << " no existe."
                   << std::endl;
