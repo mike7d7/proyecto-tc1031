@@ -6,6 +6,7 @@
 #include <rapidcsv.h>
 #include <sstream>
 #include <string>
+#include <vector>
 
 // Funciones de ayuda sacadas de proyecto anterior:
 // https://github.com/mike7d7/proyecto-TC1030/blob/main/main.cpp
@@ -69,12 +70,14 @@ int main() {
 
   std::vector<uint32_t> user_ids = doc.GetColumn<uint32_t>("user_id");
   std::vector<double> pp_values = doc.GetColumn<double>("rank_score");
+  std::vector<uint32_t> user_playtimes =
+      doc.GetColumn<uint32_t>("total_seconds_played");
 
   std::vector<User> users(10000);
   for (int i = 0; i < user_ids.size(); i++) {
     std::string username = sample_users.GetCell<std::string>(
         "username", std::to_string(user_ids[i]));
-    users[i] = User(username, user_ids[i], pp_values[i]);
+    users[i] = User(username, user_ids[i], pp_values[i], user_playtimes[i]);
   }
 
   int main_menu_option = 0;
