@@ -31,7 +31,7 @@
             gcc
           ];
           buildInputs = with pkgs; [
-            rapidcsv
+            # rapidcsv
           ];
           buildPhase = ''
             g++ -std=c++11 main.cpp "src/user.cpp" -o osu-mm

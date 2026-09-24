@@ -1,10 +1,10 @@
+#include "external-libs/rapidcsv.h"
 #include "headers/user.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <ostream>
-#include <rapidcsv.h>
 #include <sstream>
 #include <string>
 #include <vector>
