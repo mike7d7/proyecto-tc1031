@@ -55,6 +55,7 @@ int get_int(int min_val, int max_val) {
   return number;
 }
 
+// Regresa string con lista de usuarios para imprimir (truncado a 40 usuarios)
 std::string print_users(const std::vector<User> &users) {
   std::stringstream output_string;
   for (int i = 0; i < 40; i++) {
@@ -64,6 +65,7 @@ std::string print_users(const std::vector<User> &users) {
   return output_string.str();
 }
 
+// Ordena usuarios en base a su habilidad (menor a mayor)
 void sort_users_by_skill(std::vector<User> &users) {
   std::vector<User> buffer(users.size());
 
@@ -108,15 +110,18 @@ void sort_users_by_skill(std::vector<User> &users) {
 }
 
 int main() {
+  // Cargar archivos csv
   rapidcsv::Document doc("csv/osu_user_stats_202609212000.csv");
   rapidcsv::Document sample_users("csv/sample_users_202609212000.csv",
                                   rapidcsv::LabelParams(0, 0));
 
+  // Arreglos temporales con atributos
   std::vector<uint32_t> user_ids = doc.GetColumn<uint32_t>("user_id");
   std::vector<float> pp_values = doc.GetColumn<float>("rank_score");
   std::vector<uint32_t> user_playtimes =
       doc.GetColumn<uint32_t>("total_seconds_played");
 
+  // Unir arreglos temporales en arreglo de usuarios
   std::vector<User> users(10000);
   for (int i = 0; i < user_ids.size(); i++) {
     std::string username = sample_users.GetCell<std::string>(
@@ -130,11 +135,13 @@ int main() {
     main_menu_option = get_int(1, 4);
 
     switch (main_menu_option) {
+      // Opción de imprimir lista de usuarios.
     case 1: {
       std::cout << print_users(users) << std::endl;
       enter_to_continue();
       break;
     }
+      // Opción para mostrar información de un usuario
     case 2: {
       clear();
       std::cout << "Ingresa el ID del usuario: ";
@@ -155,6 +162,7 @@ int main() {
       enter_to_continue();
       break;
     }
+      // Opción para encontrar oponente
     case 3: {
       clear();
       std::cout << "Ingresa el ID del usuario: ";
