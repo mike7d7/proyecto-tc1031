@@ -8,6 +8,9 @@ En la carpeta `external-libs/` se encuentran códigos externos que se utilizan p
 Las librerías utilizadas y su propósito son las siguientes:
 - [rapidcsv](https://github.com/d99kris/rapidcsv/tree/cbd8a0a937b249cc07e2db3bfa9cd2cc1689708f): Utilizada para leer los valores de los archivos CSV de forma sencilla.
 
+## Datos utilizados
+Los datos utilizados provienen de [esta entrada](https://data.ppy.sh/2026_09_01_performance_osu_random_10000.tar.bz2) en [data.ppy.sh](https://data.ppy.sh/). Los datos se exportaron a archivos CSV para facilitar su uso en el programa. Los datos originales se encuentran en forma de scripts de SQL.
+
 ## Descripción del avance 1
 El primer avance consiste en lo siguiente:
 - Creación de clase `User`, que representa a un jugador.
