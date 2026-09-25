@@ -79,7 +79,7 @@ int main() {
                                   rapidcsv::LabelParams(0, 0));
 
   std::vector<uint32_t> user_ids = doc.GetColumn<uint32_t>("user_id");
-  std::vector<double> pp_values = doc.GetColumn<double>("rank_score");
+  std::vector<float> pp_values = doc.GetColumn<float>("rank_score");
   std::vector<uint32_t> user_playtimes =
       doc.GetColumn<uint32_t>("total_seconds_played");
 

@@ -4,7 +4,7 @@
 #include <string>
 
 uint32_t User::get_user_id() const { return user_id; }
-double User::get_pp_value() const { return pp_value; }
+float User::get_pp_value() const { return pp_value; }
 
 std::string User::get_user_info() const {
   std::stringstream output_string;
