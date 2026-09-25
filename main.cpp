@@ -65,12 +65,46 @@ std::string print_users(const std::vector<User> &users) {
 }
 
 void sort_users_by_skill(std::vector<User> &users) {
-  std::sort(users.begin(), users.end(), [](const User &a, const User &b) {
-    if (a.get_pp_value() != b.get_pp_value()) {
-      return a.get_pp_value() < b.get_pp_value();
+  std::vector<User> buffer(users.size());
+
+  for (int shift = 0; shift < 32; shift += 8) {
+    uint32_t radix_array[256] = {};
+
+    for (const User &user : users) {
+      float id = user.get_pp_value();
+
+      // Cast bytes from pp_value (float) as an int
+      uint32_t bits;
+      bits = *(uint32_t *)&id;
+
+      uint32_t radix_index = (bits >> shift) & 0xFF;
+      radix_array[radix_index] += 1;
     }
-    return a.get_playtime() < b.get_playtime();
-  });
+
+    // Calculate starting positions for each bucket value in the buffer
+    uint32_t position_in_buffer[256];
+    position_in_buffer[0] = 0;
+
+    for (int i = 1; i < 256; i++) {
+      position_in_buffer[i] = position_in_buffer[i - 1] + radix_array[i - 1];
+    }
+
+    // Move values into buffer
+    for (const User &user : users) {
+      float id = user.get_pp_value();
+
+      uint32_t bits;
+      bits = *(uint32_t *)&id;
+
+      const uint32_t bucket = (bits >> shift) & 0xFF;
+
+      uint32_t current_index = position_in_buffer[bucket];
+      buffer[current_index] = user;
+
+      position_in_buffer[bucket] = position_in_buffer[bucket] + 1;
+    }
+    users = buffer;
+  }
 }
 
 int main() {
