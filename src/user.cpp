@@ -15,4 +15,6 @@ std::string User::get_user_info() const {
   return output_string.str();
 }
 
-uint32_t User::get_playtime() const { return playtime; };
+uint32_t User::get_playtime() const { return playtime; }
+
+std::string User::get_username() const { return username; }

@@ -59,11 +59,20 @@ int get_int(int min_val, int max_val) {
 std::string print_users(const std::vector<User> &users) {
   std::stringstream output_string;
   for (int i = 0; i < 40; i++) {
-    output_string << "id: " << users[i].get_user_id()
-                  << "   pp: " << users[i].get_pp_value() << std::endl;
+    output_string << "User: " << users[i].get_username()
+                  << "   id: " << users[i].get_user_id() << std::endl;
   }
   return output_string.str();
 }
+
+// void sort_users_by_skill(std::vector<User> &users) {
+//   std::sort(users.begin(), users.end(), [](const User &a, const User &b) {
+//     if (a.get_pp_value() != b.get_pp_value()) {
+//       return a.get_pp_value() < b.get_pp_value();
+//     }
+//     return a.get_playtime() < b.get_playtime();
+//   });
+// }
 
 // Ordena usuarios en base a su habilidad (menor a mayor)
 void sort_users_by_skill(std::vector<User> &users) {

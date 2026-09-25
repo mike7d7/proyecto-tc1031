@@ -18,6 +18,7 @@ public:
         playtime(playtime) {};
 
   uint32_t get_user_id() const;
+  std::string get_username() const;
   float get_pp_value() const;
   std::string get_user_info() const;
   uint32_t get_playtime() const;
