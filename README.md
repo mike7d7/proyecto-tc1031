@@ -21,7 +21,7 @@ El primer avance consiste en lo siguiente:
 Primero, clonar el proyecto y entrar a su carpeta (en una terminal).
 Ejecutar el siguiente comando en la terminal:
 
-`g++ -std=c++11 main.cpp "src/user.cpp" -o osu-mm` 
+`g++ -std=c++11 main.cpp "src/user.cpp" "src/osumm.cpp" -O2 -o osu-mm` 
 
 ## Instrucciones para ejecutar el avance de proyecto
 Después de compilar el proyecto, ejecuta el siguiente comando en la terminal:
