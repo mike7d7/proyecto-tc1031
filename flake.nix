@@ -22,6 +22,7 @@
   in {
     packages = forEachSupportedSystem (
       {pkgs}: {
+        # Development version without optimizations and with address sanitizer
         default = pkgs.stdenv.mkDerivation {
           pname = "osu-mm";
           version = "0.0.1";
@@ -34,7 +35,7 @@
             # rapidcsv
           ];
           buildPhase = ''
-            g++ -std=c++11 main.cpp "src/user.cpp" "src/osumm.cpp" -o osu-mm
+            g++ -std=c++11 main.cpp "src/user.cpp" "src/osumm.cpp" -g -O0 -fsanitize=address -fno-omit-frame-pointer -o osu-mm
           '';
           installPhase = ''
             mkdir -p $out/bin
