@@ -1,11 +1,10 @@
 #include "external-libs/rapidcsv.h"
+#include "headers/osumm.hpp"
 #include "headers/user.hpp"
-#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <ostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -55,16 +54,6 @@ int get_int(int min_val, int max_val) {
   return number;
 }
 
-// Regresa string con lista de usuarios para imprimir (truncado a 40 usuarios)
-std::string print_users(const std::vector<User> &users) {
-  std::stringstream output_string;
-  for (int i = 0; i < 40; i++) {
-    output_string << "User: " << users[i].get_username()
-                  << "   id: " << users[i].get_user_id() << std::endl;
-  }
-  return output_string.str();
-}
-
 // void sort_users_by_skill(std::vector<User> &users) {
 //   std::sort(users.begin(), users.end(), [](const User &a, const User &b) {
 //     if (a.get_pp_value() != b.get_pp_value()) {
@@ -73,50 +62,6 @@ std::string print_users(const std::vector<User> &users) {
 //     return a.get_playtime() < b.get_playtime();
 //   });
 // }
-
-// Ordena usuarios en base a su habilidad (menor a mayor)
-void sort_users_by_skill(std::vector<User> &users) {
-  std::vector<User> buffer(users.size());
-
-  for (int shift = 0; shift < 32; shift += 8) {
-    uint32_t radix_array[256] = {};
-
-    for (const User &user : users) {
-      float id = user.get_pp_value();
-
-      // Cast bytes from pp_value (float) as an int
-      uint32_t bits;
-      bits = *(uint32_t *)&id;
-
-      uint32_t radix_index = (bits >> shift) & 0xFF;
-      radix_array[radix_index] += 1;
-    }
-
-    // Calculate starting positions for each bucket value in the buffer
-    uint32_t position_in_buffer[256];
-    position_in_buffer[0] = 0;
-
-    for (int i = 1; i < 256; i++) {
-      position_in_buffer[i] = position_in_buffer[i - 1] + radix_array[i - 1];
-    }
-
-    // Move values into buffer
-    for (const User &user : users) {
-      float id = user.get_pp_value();
-
-      uint32_t bits;
-      bits = *(uint32_t *)&id;
-
-      const uint32_t bucket = (bits >> shift) & 0xFF;
-
-      uint32_t current_index = position_in_buffer[bucket];
-      buffer[current_index] = user;
-
-      position_in_buffer[bucket] = position_in_buffer[bucket] + 1;
-    }
-    users = buffer;
-  }
-}
 
 int main() {
   // Cargar archivos csv
@@ -131,11 +76,12 @@ int main() {
       doc.GetColumn<uint32_t>("total_seconds_played");
 
   // Unir arreglos temporales en arreglo de usuarios
-  std::vector<User> users(10000);
+  OsuMM osumm = OsuMM(10000);
   for (int i = 0; i < user_ids.size(); i++) {
     std::string username = sample_users.GetCell<std::string>(
         "username", std::to_string(user_ids[i]));
-    users[i] = User(username, user_ids[i], pp_values[i], user_playtimes[i]);
+    osumm.get_users()[i] =
+        User(username, user_ids[i], pp_values[i], user_playtimes[i]);
   }
 
   int main_menu_option = 0;
@@ -146,7 +92,7 @@ int main() {
     switch (main_menu_option) {
       // Opción de imprimir lista de usuarios.
     case 1: {
-      std::cout << print_users(users) << std::endl;
+      std::cout << osumm.print_users() << std::endl;
       enter_to_continue();
       break;
     }
@@ -155,14 +101,9 @@ int main() {
       clear();
       std::cout << "Ingresa el ID del usuario: ";
       uint32_t user_to_find = get_int(0, INT32_MAX);
+      auto found_user = osumm.search_user(user_to_find);
 
-      // Código para encontrar User por atributo user_id
-      // inspirado por https://stackoverflow.com/a/40777532
-      auto found_user =
-          std::find_if(users.begin(), users.end(), [&](const User &u) {
-            return u.get_user_id() == user_to_find;
-          });
-      if (found_user != users.end()) {
+      if (found_user != osumm.get_users().end()) {
         std::cout << found_user->get_user_info() << std::endl;
       } else {
         std::cout << "El usuario con ID: " << user_to_find << " no existe."
@@ -177,17 +118,11 @@ int main() {
       std::cout << "Ingresa el ID del usuario: ";
       uint32_t user_to_find = get_int(0, INT32_MAX);
 
-      auto found_user =
-          std::find_if(users.begin(), users.end(), [&](const User &u) {
-            return u.get_user_id() == user_to_find;
-          });
-      if (found_user != users.end()) {
-        sort_users_by_skill(users);
-        found_user =
-            std::find_if(users.begin(), users.end(), [&](const User &u) {
-              return u.get_user_id() == user_to_find;
-            });
-        int user_index = std::distance(users.begin(), found_user);
+      auto found_user = osumm.search_user(user_to_find);
+      if (found_user != osumm.get_users().end()) {
+        osumm.sort_users_by_skill();
+        found_user = osumm.search_user(user_to_find);
+        int user_index = std::distance(osumm.get_users().begin(), found_user);
         int rival_index;
         if (user_index > 0) {
           rival_index = user_index - 1;
@@ -195,7 +130,8 @@ int main() {
           rival_index = user_index + 1;
         }
         std::cout << "Rival seleccionado: " << std::endl
-                  << users[rival_index].get_user_info() << std::endl;
+                  << osumm.get_users()[rival_index].get_user_info()
+                  << std::endl;
       } else {
         std::cout << "El usuario con ID: " << user_to_find << " no existe."
                   << std::endl;

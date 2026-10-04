@@ -34,7 +34,7 @@
             # rapidcsv
           ];
           buildPhase = ''
-            g++ -std=c++11 main.cpp "src/user.cpp" -o osu-mm
+            g++ -std=c++11 main.cpp "src/user.cpp" "src/osumm.cpp" -o osu-mm
           '';
           installPhase = ''
             mkdir -p $out/bin
