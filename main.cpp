@@ -3,9 +3,9 @@
 #include "headers/user.hpp"
 #include <cstdint>
 #include <iostream>
-#include <iterator>
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 // Funciones de ayuda sacadas de proyecto anterior:
@@ -54,15 +54,6 @@ int get_int(int min_val, int max_val) {
   return number;
 }
 
-// void sort_users_by_skill(std::vector<User> &users) {
-//   std::sort(users.begin(), users.end(), [](const User &a, const User &b) {
-//     if (a.get_pp_value() != b.get_pp_value()) {
-//       return a.get_pp_value() < b.get_pp_value();
-//     }
-//     return a.get_playtime() < b.get_playtime();
-//   });
-// }
-
 int main() {
   // Cargar archivos csv
   rapidcsv::Document doc("csv/osu_user_stats_202609212000.csv");
@@ -70,18 +61,26 @@ int main() {
                                   rapidcsv::LabelParams(0, 0));
 
   // Arreglos temporales con atributos
-  std::vector<uint32_t> user_ids = doc.GetColumn<uint32_t>("user_id");
+  std::vector<uint32_t> user_ids_temp = doc.GetColumn<uint32_t>("user_id");
   std::vector<float> pp_values = doc.GetColumn<float>("rank_score");
   std::vector<uint32_t> user_playtimes =
       doc.GetColumn<uint32_t>("total_seconds_played");
 
-  // Unir arreglos temporales en arreglo de usuarios
-  OsuMM osumm = OsuMM(10000);
-  for (int i = 0; i < user_ids.size(); i++) {
+  // Crear hashmap de users con los arreglos temporales
+  OsuMM osumm = OsuMM(user_ids_temp.size());
+  std::unordered_map<int, User> &users = osumm.get_users();
+  for (int i = 0; i < user_ids_temp.size(); i++) {
     std::string username = sample_users.GetCell<std::string>(
-        "username", std::to_string(user_ids[i]));
-    osumm.get_users()[i] =
-        User(username, user_ids[i], pp_values[i], user_playtimes[i]);
+        "username", std::to_string(user_ids_temp[i]));
+    users.insert({user_ids_temp[i], User(username, user_ids_temp[i],
+                                         pp_values[i], user_playtimes[i])});
+  }
+
+  // Crear vector con id y pp_value de Users para poder ordenar y encontrar
+  // oponente
+  std::vector<std::tuple<int, int>> &user_ids = osumm.get_user_ids();
+  for (int i = 0; i < user_ids_temp.size(); i++) {
+    user_ids.push_back(std::make_tuple(user_ids_temp[i], pp_values[i]));
   }
 
   int main_menu_option = 0;
@@ -101,14 +100,14 @@ int main() {
       clear();
       std::cout << "Ingresa el ID del usuario: ";
       uint32_t user_to_find = get_int(0, INT32_MAX);
-      auto found_user = osumm.search_user(user_to_find);
-
-      if (found_user != osumm.get_users().end()) {
-        std::cout << found_user->get_user_info() << std::endl;
-      } else {
+      try {
+        auto found_user = osumm.search_user(user_to_find);
+        std::cout << found_user.get_user_info() << std::endl;
+      } catch (const std::out_of_range &ex) {
         std::cout << "El usuario con ID: " << user_to_find << " no existe."
                   << std::endl;
       }
+
       enter_to_continue();
       break;
     }
@@ -118,21 +117,37 @@ int main() {
       std::cout << "Ingresa el ID del usuario: ";
       uint32_t user_to_find = get_int(0, INT32_MAX);
 
-      auto found_user = osumm.search_user(user_to_find);
-      if (found_user != osumm.get_users().end()) {
+      try {
+        auto found_user = osumm.search_user(user_to_find);
+
         osumm.sort_users_by_skill();
-        found_user = osumm.search_user(user_to_find);
-        int user_index = std::distance(osumm.get_users().begin(), found_user);
+        int user_index = 0;
+        bool found = false;
+        while (!found) {
+          if (std::get<0>(user_ids[user_index]) != user_to_find) {
+            user_index++;
+          } else {
+            found = true;
+          }
+        }
         int rival_index;
         if (user_index > 0) {
           rival_index = user_index - 1;
         } else {
           rival_index = user_index + 1;
         }
-        std::cout << "Rival seleccionado: " << std::endl
-                  << osumm.get_users()[rival_index].get_user_info()
-                  << std::endl;
-      } else {
+        try {
+          auto rival_user = std::get<0>(user_ids[rival_index]);
+          std::cout << "Jugador buscado: " << found_user.get_user_info()
+                    << std::endl;
+
+          std::cout << "Rival seleccionado: " << std::endl
+                    << osumm.search_user(rival_user).get_user_info()
+                    << std::endl;
+        } catch (const std::out_of_range &ex) {
+          std::cout << "No deberia existir este error" << std::endl;
+        }
+      } catch (const std::out_of_range &ex) {
         std::cout << "El usuario con ID: " << user_to_find << " no existe."
                   << std::endl;
       }

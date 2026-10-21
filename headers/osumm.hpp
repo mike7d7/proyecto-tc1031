@@ -3,18 +3,22 @@
 
 #include "user.hpp"
 #include <cstdint>
+#include <tuple>
+#include <unordered_map>
 #include <vector>
 class OsuMM {
 private:
-  std::vector<User> users;
+  std::unordered_map<int, User> users;
+  std::vector<std::tuple<int, int>> user_ids; // <id, pp_value>
 
 public:
   std::string print_users() const;
   void sort_users_by_skill();
   OsuMM() : users() {};
   OsuMM(int users_vector_size) : users(users_vector_size) {};
-  std::vector<User>::iterator search_user(uint32_t);
+  User search_user(uint32_t);
 
-  std::vector<User> &get_users();
+  std::unordered_map<int, User> &get_users();
+  std::vector<std::tuple<int, int>> &get_user_ids();
 };
 #endif
