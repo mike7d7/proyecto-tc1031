@@ -167,7 +167,7 @@ int main(int, char **) {
     user_ids.push_back(std::make_tuple(user_ids_temp[i], pp_values[i]));
   }
 
-  // Variables para segunda tab
+  // Id del usuario a buscar en tab 2 y 3
   uint32_t user_to_find = 0;
 
   // Main loop
