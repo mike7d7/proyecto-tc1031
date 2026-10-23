@@ -22,6 +22,41 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
+void show_user_info(const User &found_user, const char *id_name) {
+  uint32_t total_minutes = found_user.get_playtime() / 60;
+  uint32_t days = total_minutes / (24 * 60);
+  uint32_t hours = (total_minutes / 60) % 24;
+  uint32_t minutes = total_minutes % 60;
+
+  ImGui::BeginChild(id_name, ImVec2(0, 160.0f), ImGuiChildFlags_Borders);
+
+  ImGui::TextUnformatted(found_user.get_username().c_str());
+  ImGui::TextDisabled("User ID: %u", found_user.get_user_id());
+  ImGui::Spacing();
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  if (ImGui::BeginTable("PlayerStats", 2, ImGuiTableFlags_SizingStretchSame)) {
+    ImGui::TableNextColumn();
+    ImGui::BeginChild("PPCard", ImVec2(0, 90), ImGuiChildFlags_Borders);
+    ImGui::TextDisabled("Puntos de rendimiento (PP)");
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("%.2f", found_user.get_pp_value());
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::EndChild();
+
+    ImGui::TableNextColumn();
+    ImGui::BeginChild("PlaytimeCard", ImVec2(0, 90), ImGuiChildFlags_Borders);
+    ImGui::TextDisabled("Tiempo de juego");
+    ImGui::Text("%u días, %u horas, %u minutos", days, hours, minutes);
+    ImGui::EndChild();
+
+    ImGui::EndTable();
+  }
+
+  ImGui::EndChild();
+}
+
 // Main code
 int main(int, char **) {
   // Setup SDL
@@ -278,10 +313,7 @@ int main(int, char **) {
         if (user_to_find != 0) {
           try {
             auto found_user = osumm.search_user(user_to_find);
-
-            std::stringstream user_info;
-            user_info << found_user.get_user_info();
-            ImGui::Text("%s", user_info.str().c_str());
+            show_user_info(found_user, "UserProfile");
           } catch (const std::out_of_range &ex) {
             std::stringstream error_msg;
             error_msg << "El usuario con ID: " << user_to_find << " no existe";
@@ -320,13 +352,15 @@ int main(int, char **) {
               User rival_user =
                   osumm.search_user(std::get<0>(user_ids[rival_index]));
 
-              std::stringstream user_info;
-              user_info << found_user.get_user_info();
-              ImGui::Text("%s", user_info.str().c_str());
-
-              std::stringstream rival_info;
-              rival_info << rival_user.get_user_info();
-              ImGui::Text("%s", rival_info.str().c_str());
+              ImGui::SetWindowFontScale(2.0f);
+              ImGui::Text("Usuario Buscado:");
+              ImGui::SetWindowFontScale(1.0f);
+              show_user_info(found_user, "FirstUser");
+              ImGui::Separator();
+              ImGui::SetWindowFontScale(2.0f);
+              ImGui::Text("Rival seleccionado:");
+              ImGui::SetWindowFontScale(1.0f);
+              show_user_info(rival_user, "SecondUser");
             } catch (const std::out_of_range &ex) {
               std::stringstream error_msg;
               error_msg << "No deberia existir este error";
