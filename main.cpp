@@ -28,7 +28,7 @@ void show_user_info(const User &found_user, const char *id_name) {
   uint32_t hours = (total_minutes / 60) % 24;
   uint32_t minutes = total_minutes % 60;
 
-  ImGui::BeginChild(id_name, ImVec2(0, 160.0f), ImGuiChildFlags_Borders);
+  ImGui::BeginChild(id_name, ImVec2(0, 200.0f), ImGuiChildFlags_Borders);
 
   ImGui::TextUnformatted(found_user.get_username().c_str());
   ImGui::TextDisabled("User ID: %u", found_user.get_user_id());
@@ -71,7 +71,7 @@ int main(int, char **) {
   }
 
   // Create SDL window graphics context
-  float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+  float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay()) * 1.5;
   SDL_WindowFlags window_flags =
       SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
   SDL_Window *window = SDL_CreateWindow("Dear ImGui SDL3+SDL_GPU example",
@@ -254,6 +254,56 @@ int main(int, char **) {
     ImGui::Begin("imgui window", NULL, imgui_window_flags);
     // Finalmente, el código para la GUI.
     if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) {
+
+      // Intro Tab
+      if (ImGui::BeginTabItem("Cómo usar el programa")) {
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(0.40f, 0.75f, 1.0f, 1.0f), "GUÍA RÁPIDA");
+        ImGui::TextWrapped(
+            "Consulta jugadores, revisa sus perfiles y encuentra un rival "
+            "desde las pestañas principales.");
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 10.0f));
+
+        ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.65f, 1.0f),
+                           "1. Lista de jugadores");
+        ImGui::TextWrapped(
+            "Visualiza información general de múltiples jugadores, utiliza los "
+            "botones de cambio página para recorrer la lista.");
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.65f, 1.0f),
+                           "2. Información de jugador");
+        ImGui::TextWrapped(
+            "Introduce un User ID para consultar el perfil. También puedes "
+            "seleccionar a alguien en la lista y confirmar para copiar su ID.");
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.65f, 1.0f),
+                           "3. Encontrar oponente");
+        ImGui::TextWrapped(
+            "Introduce un User ID para mostrar ese perfil y un rival cercano "
+            "en la clasificación por habilidad.");
+
+        ImGui::PopStyleVar();
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(1.0f, 0.80f, 0.40f, 1.0f), "Consejo");
+        ImGui::TextWrapped(
+            "Usa un User ID válido y distinto de 0. Si no conoces el ID, "
+            "puedes buscarlo primero en la lista de jugadores.");
+
+        ImGui::EndTabItem();
+      }
+
       // Tab 1
       if (ImGui::BeginTabItem("Lista de jugadores")) {
         ImGui::BeginTable("UsersTable", 4,
@@ -261,7 +311,7 @@ int main(int, char **) {
                               ImGuiTableFlags_Resizable |
                               ImGuiTableFlags_ScrollY |
                               ImGuiTableFlags_SizingStretchProp,
-                          ImVec2(0.0f, 800.0f));
+                          ImVec2(0.0f, 1100.0f));
         ImGui::TableSetupColumn("User ID");
         ImGui::TableSetupColumn("Username");
         ImGui::TableSetupColumn("PP");
