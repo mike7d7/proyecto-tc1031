@@ -18,15 +18,19 @@ El primer avance consiste en lo siguiente:
 - Algoritmo de ordenamiento basado en [RadixSort](https://en.wikipedia.org/wiki/Radix_sort) para el ordenamiento de los usuarios en base a sus puntos de rendimiento (necesario para encontrar oponentes).
 
 ## Instrucciones para compilar el avance de proyecto
-Primero, clonar el proyecto y entrar a su carpeta (en una terminal).
-Ejecutar el siguiente comando en la terminal:
+Se asume que ya se tiene la librería de `SDL3` instalada.
 
-`g++ -std=c++11 main.cpp "src/user.cpp" "src/osumm.cpp" -O2 -o osu-mm` 
+Primero, clonar el proyecto y entrar a su carpeta (en una terminal).
+Ejecutar los siguientes comandos en la terminal:
+
+`git submodule update --init --recursive`
+
+`make install-local`
 
 ## Instrucciones para ejecutar el avance de proyecto
 Después de compilar el proyecto, ejecuta el siguiente comando en la terminal:
 
-`./osu-mm` 
+`./bin/osu-mm` 
 
 ## Descripción de las entradas del avance de proyecto
 El programa requiere archivos en formato CSV en el mismo formato que la base de datos de osu!. En la carpeta `csv/` de este repositorio se encuentran los archivos de ejemplo. Los datos utilizados provienen de [esta entrada](https://data.ppy.sh/2026_09_01_performance_osu_random_10000.tar.bz2) en [data.ppy.sh](https://data.ppy.sh/). Los datos se exportaron a archivos CSV para facilitar su uso en el programa. Los datos originales se encuentran en forma de scripts de SQL.
