@@ -204,6 +204,7 @@ int main(int, char **) {
 
   // Id del usuario a buscar en tab 2 y 3
   uint32_t user_to_find = 0;
+  static int g_selected_user_id = 100;
 
   // Main loop
   bool done = false;
@@ -270,13 +271,28 @@ int main(int, char **) {
 
         static int page = 0;
         int max_entries = std::min((page + 1) * 40, (int)user_ids.size());
+        bool open_popup = false;
 
         for (int i = page * 40; i < max_entries; i++) {
           const User &user = users[std::get<0>(user_ids[i])];
-          ImGui::TableNextRow();
 
+          ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
-          ImGui::Text("%u", user.get_user_id());
+
+          ImGui::PushID(user.get_user_id());
+
+          char user_id_text[32];
+          snprintf(user_id_text, sizeof(user_id_text), "%u",
+                   user.get_user_id());
+
+          if (ImGui::Selectable(user_id_text, false,
+                                ImGuiSelectableFlags_SpanAllColumns)) {
+            g_selected_user_id = user.get_user_id();
+            open_popup = true;
+            ImGui::OpenPopup("ConfirmViewUserInfo");
+          }
+
+          ImGui::PopID();
 
           ImGui::TableSetColumnIndex(1);
           ImGui::TextUnformatted(user.get_username().c_str());
@@ -290,6 +306,27 @@ int main(int, char **) {
           ImGui::Text("%uh %02um", hours, minutes);
         }
         ImGui::EndTable();
+
+        if (open_popup) {
+          ImGui::OpenPopup("ConfirmViewUserInfo");
+        }
+
+        if (ImGui::BeginPopup("ConfirmViewUserInfo")) {
+          ImGui::Text("¿Quieres ver la información detallada del jugador?");
+          ImGui::Spacing();
+          if (ImGui::Button("Si (copia el User Id a la pestaña 2)")) {
+            user_to_find = g_selected_user_id;
+            ImGui::CloseCurrentPopup();
+          }
+          ImGui::SameLine();
+
+          if (ImGui::Button("No, permanecer aquí")) {
+            ImGui::CloseCurrentPopup();
+          }
+
+          ImGui::EndPopup();
+        }
+
         ImGui::BeginDisabled(page == 0);
         if (ImGui::Button("Página anterior")) {
           if (page > 0) {
