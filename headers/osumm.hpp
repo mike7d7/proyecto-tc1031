@@ -12,7 +12,6 @@ private:
   std::vector<std::tuple<int, int>> user_ids; // <id, pp_value>
 
 public:
-  std::string print_users() const;
   void sort_users_by_skill();
   OsuMM() : users() {};
   OsuMM(int users_vector_size) : users(users_vector_size) {};

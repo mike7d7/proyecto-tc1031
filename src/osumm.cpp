@@ -1,18 +1,5 @@
 #include "../headers/osumm.hpp"
-#include <sstream>
 #include <tuple>
-
-// Regresa string con lista de usuarios para imprimir (truncado a 40 usuarios)
-std::string OsuMM::print_users() const {
-  std::stringstream output_string;
-  int count = 0;
-  for (auto it = users.begin(); it != users.end() && count < 40;
-       ++it, ++count) {
-    output_string << "Key: " << it->first
-                  << ", Value: " << it->second.get_username() << std::endl;
-  }
-  return output_string.str();
-}
 
 // Ordena usuarios en base a su habilidad (menor a mayor)
 void OsuMM::sort_users_by_skill() {

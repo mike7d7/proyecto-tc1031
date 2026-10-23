@@ -1,60 +1,144 @@
+#include "external-libs/imgui/backends/imgui_impl_sdl3.h"
+#include "external-libs/imgui/backends/imgui_impl_sdlgpu3.h"
 #include "external-libs/rapidcsv.h"
 #include "headers/osumm.hpp"
 #include "headers/user.hpp"
+#include "imgui.h"
+#include <SDL3/SDL.h>
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <ostream>
+#include <sstream>
+#include <stdio.h>  // printf, fprintf
+#include <stdlib.h> // abort
 #include <string>
 #include <tuple>
 #include <vector>
 
-// Funciones de ayuda sacadas de proyecto anterior:
-// https://github.com/mike7d7/proyecto-TC1030/blob/main/main.cpp
-void enter_to_continue() {
-  std::cout << "Presiona enter para continuar" << std::endl;
-  std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-  std::cin.get();
-}
+// This example doesn't compile with Emscripten yet! Awaiting SDL3 support.
+#ifdef __EMSCRIPTEN__
+#include "../libs/emscripten/emscripten_mainloop_stub.h"
+#endif
 
-// Simula limpiar la pantalla mediante 100 newlines.
-void clear() {
-  for (int i = 0; i < 100; i++) {
-    std::cout << std::endl;
+// Main code
+int main(int, char **) {
+  // Setup SDL
+  // Use wayland on Linux, on other platforms comment this line
+  SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland", SDL_HINT_OVERRIDE);
+
+  // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop starts
+  // would likely be your SDL_AppInit() function]
+  if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+    printf("Error: SDL_Init(): %s\n", SDL_GetError());
+    return 1;
   }
-}
 
-// Muestra el menú principal del programa
-void main_menu() {
-  clear();
-  std::cout << "Ingresa una opción" << std::endl;
-  std::cout << "1.- Mostrar Jugadores" << std::endl;
-  std::cout << "2.- Mostrar información de un jugador" << std::endl;
-  std::cout << "3.- Encontrar oponente" << std::endl;
-  std::cout << "4.- Salir" << std::endl;
-}
-
-// Verifica que el input sea un int válido y que esté dentro del rango
-// especificado. Lógica para verificar cast de string a int sacado de:
-// https://cplusplus.com/forum/beginner/283248/#msg1226145
-int get_int(int min_val, int max_val) {
-  int number;
-  while (!(std::cin >> number)) {
-    std::cout << "Entrada inválida, intenta otra vez." << std::endl;
-    std::cin.clear(); // clear fail flag
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
-                    '\n'); // discard the whole line
+  // Create SDL window graphics context
+  float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+  SDL_WindowFlags window_flags =
+      SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+  SDL_Window *window = SDL_CreateWindow("Dear ImGui SDL3+SDL_GPU example",
+                                        (int)(1280 * main_scale),
+                                        (int)(800 * main_scale), window_flags);
+  if (window == nullptr) {
+    printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
+    return 1;
   }
-  if (number < min_val || number > max_val) {
-    std::cout << "Entrada inválida, intenta otra vez." << std::endl;
-    std::cin.clear(); // clear fail flag
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
-                    '\n'); // discard the whole line
-    number = get_int(min_val, max_val);
-  }
-  return number;
-}
+  SDL_SetWindowPosition(window, 0, 0);
+  SDL_ShowWindow(window);
 
-int main() {
+  // Create GPU Device
+  SDL_GPUDevice *gpu_device = SDL_CreateGPUDevice(
+      SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL |
+          SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_METALLIB,
+      true, nullptr);
+  if (gpu_device == nullptr) {
+    printf("Error: SDL_CreateGPUDevice(): %s\n", SDL_GetError());
+    return 1;
+  }
+
+  // Claim window for GPU Device
+  if (!SDL_ClaimWindowForGPUDevice(gpu_device, window)) {
+    printf("Error: SDL_ClaimWindowForGPUDevice(): %s\n", SDL_GetError());
+    return 1;
+  }
+  SDL_SetGPUSwapchainParameters(gpu_device, window,
+                                SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                                SDL_GPU_PRESENTMODE_VSYNC);
+
+  // Setup Dear ImGui context
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  (void)io;
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+
+  // Setup Dear ImGui style
+  ImGuiStyle &style = ImGui::GetStyle();
+  ImGui::StyleColorsDark();
+  // ImGui::StyleColorsLight();
+  // style.FontSizeBase = 16.0f;           // Default to 13.0f when unspecified,
+  // which allows crisp legacy font for non-4K screens.
+  style.FrameRounding = 3.0f;
+  style.GrabRounding = 3.0f;
+
+  // Setup scaling
+  style.ScaleAllSizes(
+      main_scale); // Bake a fixed style scale. (until we have a solution for
+                   // dynamic style scaling, changing this requires resetting
+                   // Style + calling this again)
+  style.FontScaleDpi =
+      main_scale; // Set initial font scale. (in docking branch: using
+                  // io.ConfigDpiScaleFonts=true automatically overrides this
+                  // for every window depending on the current monitor)
+
+  // Setup Platform/Renderer backends
+  ImGui_ImplSDL3_InitForSDLGPU(window);
+  ImGui_ImplSDLGPU3_InitInfo init_info = {};
+  init_info.Device = gpu_device;
+  init_info.ColorTargetFormat =
+      SDL_GetGPUSwapchainTextureFormat(gpu_device, window);
+  init_info.MSAASamples =
+      SDL_GPU_SAMPLECOUNT_1; // Only used in multi-viewports mode.
+  init_info.SwapchainComposition =
+      SDL_GPU_SWAPCHAINCOMPOSITION_SDR; // Only used in multi-viewports mode.
+  init_info.PresentMode = SDL_GPU_PRESENTMODE_VSYNC;
+  ImGui_ImplSDLGPU3_Init(&init_info);
+
+  // Load Fonts
+  // - If fonts are not explicitly loaded, Dear ImGui will select an embedded
+  // font: either AddFontDefaultVector() or AddFontDefaultBitmap().
+  //   This selection is based on (style.FontSizeBase * style.FontScaleMain *
+  //   style.FontScaleDpi) reaching a threshold.
+  // - You can load multiple fonts and use ImGui::PushFont()/PopFont() to select
+  // them.
+  // - If a file cannot be loaded, AddFont functions will return a nullptr.
+  // Please handle those errors in your code (e.g. use an assertion, display an
+  // error and quit).
+  // - Read 'docs/FONTS.md' for more instructions and details.
+  // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use FreeType
+  // for higher quality font rendering.
+  // - Remember that in C/C++ if you want to include a backslash \ in a string
+  // literal you need to write a double backslash \\ !
+  // io.Fonts->AddFontDefaultVector();
+  // io.Fonts->AddFontDefaultBitmap();
+  // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
+  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf");
+  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf");
+  // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf");
+  // ImFont* font =
+  // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf");
+  // IM_ASSERT(font != nullptr);
+
+  // Our state
+  bool show_another_window = false;
+  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
   // Cargar archivos csv
   rapidcsv::Document doc("csv/osu_user_stats_202609212000.csv");
   rapidcsv::Document sample_users("csv/sample_users_202609212000.csv",
@@ -83,80 +167,238 @@ int main() {
     user_ids.push_back(std::make_tuple(user_ids_temp[i], pp_values[i]));
   }
 
-  int main_menu_option = 0;
-  while (main_menu_option != -1) {
-    main_menu();
-    main_menu_option = get_int(1, 4);
+  // Variables para segunda tab
+  uint32_t user_to_find = 0;
 
-    switch (main_menu_option) {
-      // Opción de imprimir lista de usuarios.
-    case 1: {
-      std::cout << osumm.print_users() << std::endl;
-      enter_to_continue();
-      break;
+  // Main loop
+  bool done = false;
+  while (!done) {
+    // Poll and handle events (inputs, window resize, etc.)
+    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to
+    // tell if dear imgui wants to use your inputs.
+    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
+    // your main application, or clear/overwrite your copy of the mouse data.
+    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input
+    // data to your main application, or clear/overwrite your copy of the
+    // keyboard data. Generally you may always pass all inputs to dear imgui,
+    // and hide them from your application based on those two flags. [If using
+    // SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your
+    // SDL_AppEvent() function]
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+      ImGui_ImplSDL3_ProcessEvent(&event);
+      if (event.type == SDL_EVENT_QUIT)
+        done = true;
+      if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+          event.window.windowID == SDL_GetWindowID(window))
+        done = true;
     }
-      // Opción para mostrar información de un usuario
-    case 2: {
-      clear();
-      std::cout << "Ingresa el ID del usuario: ";
-      uint32_t user_to_find = get_int(0, INT32_MAX);
-      try {
-        auto found_user = osumm.search_user(user_to_find);
-        std::cout << found_user.get_user_info() << std::endl;
-      } catch (const std::out_of_range &ex) {
-        std::cout << "El usuario con ID: " << user_to_find << " no existe."
-                  << std::endl;
-      }
 
-      enter_to_continue();
-      break;
+    // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your
+    // SDL_AppIterate() function]
+    if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
+      SDL_Delay(10);
+      continue;
     }
-      // Opción para encontrar oponente
-    case 3: {
-      clear();
-      std::cout << "Ingresa el ID del usuario: ";
-      uint32_t user_to_find = get_int(0, INT32_MAX);
 
-      try {
-        auto found_user = osumm.search_user(user_to_find);
+    // Start the Dear ImGui frame
+    ImGui_ImplSDLGPU3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
 
-        osumm.sort_users_by_skill();
-        int user_index = 0;
-        bool found = false;
-        while (!found) {
-          if (std::get<0>(user_ids[user_index]) != user_to_find) {
-            user_index++;
-          } else {
-            found = true;
+    // Stuff for making the ImGui window the same size as the system window
+    ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGuiWindowFlags imgui_window_flags = 0;
+    imgui_window_flags |= ImGuiWindowFlags_NoTitleBar;
+    imgui_window_flags |= ImGuiWindowFlags_NoMove;
+    imgui_window_flags |= ImGuiWindowFlags_NoResize;
+
+    ImGui::Begin("imgui window", NULL, imgui_window_flags);
+    // Finalmente, el código para la GUI.
+    if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) {
+      // Tab 1
+      if (ImGui::BeginTabItem("Lista de jugadores")) {
+        ImGui::BeginTable("UsersTable", 4,
+                          ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                              ImGuiTableFlags_Resizable |
+                              ImGuiTableFlags_ScrollY |
+                              ImGuiTableFlags_SizingStretchProp,
+                          ImVec2(0.0f, 800.0f));
+        ImGui::TableSetupColumn("User ID");
+        ImGui::TableSetupColumn("Username");
+        ImGui::TableSetupColumn("PP");
+        ImGui::TableSetupColumn("Playtime");
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableHeadersRow();
+
+        static int page = 0;
+        int max_entries = std::min((page + 1) * 40, (int)user_ids.size());
+
+        for (int i = page * 40; i < max_entries; i++) {
+          const User &user = users[std::get<0>(user_ids[i])];
+          ImGui::TableNextRow();
+
+          ImGui::TableSetColumnIndex(0);
+          ImGui::Text("%u", user.get_user_id());
+
+          ImGui::TableSetColumnIndex(1);
+          ImGui::TextUnformatted(user.get_username().c_str());
+
+          ImGui::TableSetColumnIndex(2);
+          ImGui::Text("%.2f", user.get_pp_value());
+
+          ImGui::TableSetColumnIndex(3);
+          const uint32_t hours = user.get_playtime() / 3600;
+          const uint32_t minutes = (user.get_playtime() % 3600) / 60;
+          ImGui::Text("%uh %02um", hours, minutes);
+        }
+        ImGui::EndTable();
+        ImGui::BeginDisabled(page == 0);
+        if (ImGui::Button("Página anterior")) {
+          if (page > 0) {
+            page--;
           }
         }
-        int rival_index;
-        if (user_index > 0) {
-          rival_index = user_index - 1;
-        } else {
-          rival_index = user_index + 1;
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::Text("Página %d", page + 1);
+        ImGui::SameLine();
+        if (ImGui::Button("Página siguiente")) {
+          page++;
         }
-        try {
-          auto rival_user = std::get<0>(user_ids[rival_index]);
-          std::cout << "Jugador buscado: " << found_user.get_user_info()
-                    << std::endl;
-
-          std::cout << "Rival seleccionado: " << std::endl
-                    << osumm.search_user(rival_user).get_user_info()
-                    << std::endl;
-        } catch (const std::out_of_range &ex) {
-          std::cout << "No deberia existir este error" << std::endl;
-        }
-      } catch (const std::out_of_range &ex) {
-        std::cout << "El usuario con ID: " << user_to_find << " no existe."
-                  << std::endl;
+        ImGui::EndTabItem();
       }
-      enter_to_continue();
-      break;
+      // Tab 2
+      if (ImGui::BeginTabItem("Información de jugador")) {
+        ImGui::Text("User id:");
+        ImGui::SameLine();
+        ImGui::InputScalar("##user_id", ImGuiDataType_U32, &user_to_find);
+        if (user_to_find != 0) {
+          try {
+            auto found_user = osumm.search_user(user_to_find);
+
+            std::stringstream user_info;
+            user_info << found_user.get_user_info();
+            ImGui::Text("%s", user_info.str().c_str());
+          } catch (const std::out_of_range &ex) {
+            std::stringstream error_msg;
+            error_msg << "El usuario con ID: " << user_to_find << " no existe";
+            ImGui::Text("%s", error_msg.str().c_str());
+          }
+        }
+
+        ImGui::EndTabItem();
+      }
+      // Tab 3
+      if (ImGui::BeginTabItem("Encontrar oponente")) {
+        ImGui::Text("User id:");
+        ImGui::SameLine();
+        ImGui::InputScalar("##user_id", ImGuiDataType_U32, &user_to_find);
+        if (user_to_find != 0) {
+
+          try {
+            auto found_user = osumm.search_user(user_to_find);
+            osumm.sort_users_by_skill();
+            int user_index = 0;
+            bool found = false;
+            while (!found) {
+              if (std::get<0>(user_ids[user_index]) != user_to_find) {
+                user_index++;
+              } else {
+                found = true;
+              }
+            }
+            int rival_index;
+            if (user_index > 0) {
+              rival_index = user_index - 1;
+            } else {
+              rival_index = user_index + 1;
+            }
+            try {
+              User rival_user =
+                  osumm.search_user(std::get<0>(user_ids[rival_index]));
+
+              std::stringstream user_info;
+              user_info << found_user.get_user_info();
+              ImGui::Text("%s", user_info.str().c_str());
+
+              std::stringstream rival_info;
+              rival_info << rival_user.get_user_info();
+              ImGui::Text("%s", rival_info.str().c_str());
+            } catch (const std::out_of_range &ex) {
+              std::stringstream error_msg;
+              error_msg << "No deberia existir este error";
+              ImGui::Text("%s", error_msg.str().c_str());
+            }
+          } catch (const std::out_of_range &ex) {
+            std::stringstream error_msg;
+            error_msg << "El usuario con ID: " << user_to_find << " no existe";
+            ImGui::Text("%s", error_msg.str().c_str());
+          }
+        }
+
+        ImGui::EndTabItem();
+      }
+      ImGui::EndTabBar();
     }
-    default: {
-      main_menu_option = -1;
+    ImGui::End();
+
+    // Rendering
+    ImGui::Render();
+    ImDrawData *draw_data = ImGui::GetDrawData();
+    const bool is_minimized =
+        (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
+
+    SDL_GPUCommandBuffer *command_buffer =
+        SDL_AcquireGPUCommandBuffer(gpu_device); // Acquire a GPU command buffer
+
+    SDL_GPUTexture *swapchain_texture;
+    SDL_WaitAndAcquireGPUSwapchainTexture(
+        command_buffer, window, &swapchain_texture, nullptr,
+        nullptr); // Acquire a swapchain texture
+
+    if (swapchain_texture != nullptr && !is_minimized) {
+      // This is mandatory: call ImGui_ImplSDLGPU3_PrepareDrawData() to upload
+      // the vertex/index buffer!
+      ImGui_ImplSDLGPU3_PrepareDrawData(draw_data, command_buffer);
+
+      // Setup and start a render pass
+      SDL_GPUColorTargetInfo target_info = {};
+      target_info.texture = swapchain_texture;
+      target_info.clear_color = SDL_FColor{clear_color.x, clear_color.y,
+                                           clear_color.z, clear_color.w};
+      target_info.load_op = SDL_GPU_LOADOP_CLEAR;
+      target_info.store_op = SDL_GPU_STOREOP_STORE;
+      target_info.mip_level = 0;
+      target_info.layer_or_depth_plane = 0;
+      target_info.cycle = false;
+      SDL_GPURenderPass *render_pass =
+          SDL_BeginGPURenderPass(command_buffer, &target_info, 1, nullptr);
+
+      // Render ImGui
+      ImGui_ImplSDLGPU3_RenderDrawData(draw_data, command_buffer, render_pass);
+
+      SDL_EndGPURenderPass(render_pass);
     }
-    }
+
+    // Submit the command buffer
+    SDL_SubmitGPUCommandBuffer(command_buffer);
   }
+
+  // Cleanup
+  // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your
+  // SDL_AppQuit() function]
+  SDL_WaitForGPUIdle(gpu_device);
+  ImGui_ImplSDL3_Shutdown();
+  ImGui_ImplSDLGPU3_Shutdown();
+  ImGui::DestroyContext();
+
+  SDL_ReleaseWindowFromGPUDevice(gpu_device, window);
+  SDL_DestroyGPUDevice(gpu_device);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+
+  return 0;
 }
