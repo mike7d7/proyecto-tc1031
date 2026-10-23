@@ -33,7 +33,6 @@
   in {
     packages = forEachSupportedSystem (
       {pkgs}: {
-        # Development version without optimizations and with address sanitizer
         default = pkgs.clangStdenv.mkDerivation {
           pname = "osu-mm";
           version = "0.0.1";
@@ -54,28 +53,6 @@
             "PREFIX=${placeholder "out"}"
           ];
         };
-
-        # default = pkgs.stdenv.mkDerivation {
-        #   pname = "osu-mm";
-        #   version = "0.0.1";
-        #   src = self;
-        #   nativeBuildInputs = with pkgs; [
-        #     pkg-config
-        #     gcc
-        #   ];
-        #   buildInputs = with pkgs; [
-        #     # rapidcsv
-        #     imgui-latest
-        #     glfw3
-        #   ];
-        #   buildPhase = ''
-        #     g++ -std=c++11 main.cpp "src/user.cpp" "src/osumm.cpp" -g -O0 -fsanitize=address -fno-omit-frame-pointer -o osu-mm
-        #   '';
-        #   installPhase = ''
-        #     mkdir -p $out/bin
-        #     cp osu-mm $out/bin/
-        #   '';
-        # };
       }
     );
     devShells = forEachSupportedSystem (
