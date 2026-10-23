@@ -84,3 +84,7 @@ install: $(EXE)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	install -m 0755 osu-mm $(DESTDIR)$(PREFIX)/bin/osu-mm
 
+install-local: $(EXE)
+	mkdir -p ./bin
+	install -m 0755 osu-mm ./bin/osu-mm
+
