@@ -15,6 +15,8 @@ public:
   void sort_users_by_skill();
   OsuMM();
 
+  bool save_data();
+
   User search_user(uint32_t);
 
   std::unordered_map<int, User> &get_users();

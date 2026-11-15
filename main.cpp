@@ -365,6 +365,13 @@ int main(int, char **) {
         if (ImGui::Button("Página siguiente")) {
           page++;
         }
+        float saveWidth = ImGui::CalcTextSize("Guardar cambios").x +
+                          ImGui::GetStyle().FramePadding.x * 2.0f;
+
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - saveWidth);
+        if (ImGui::Button("Guardar cambios")) {
+          osumm.save_data();
+        }
         ImGui::EndTabItem();
       }
       // Tab 2

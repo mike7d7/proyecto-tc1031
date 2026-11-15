@@ -1,5 +1,7 @@
 #include "../headers/osumm.hpp"
 #include "../external-libs/rapidcsv.h"
+#include <cstdint>
+#include <string>
 #include <tuple>
 
 OsuMM::OsuMM() {
@@ -75,6 +77,45 @@ void OsuMM::sort_users_by_skill() {
     }
     user_ids = buffer;
   }
+}
+
+bool OsuMM::save_data() {
+  // sample_users file
+  rapidcsv::Document sample_users;
+  sample_users.SetColumnName(0, "user_id");
+  sample_users.SetColumnName(1, "username");
+  sample_users.SetColumnName(2, "user_warnings");
+  sample_users.SetColumnName(3, "user_type");
+
+  for (int i = 0; i < user_ids.size(); i++) {
+    uint32_t user_index = std::get<0>(user_ids[i]);
+    sample_users.SetCell<uint32_t>(0, i, search_user(user_index).get_user_id());
+    sample_users.SetCell<std::string>(1, i,
+                                      search_user(user_index).get_username());
+  }
+
+  // osu_user_stats file
+  rapidcsv::Document osu_user_stats;
+  osu_user_stats.SetColumnName(0, "user_id");
+  osu_user_stats.SetColumnName(1, "rank_score");
+  osu_user_stats.SetColumnName(2, "total_seconds_played");
+
+  for (int i = 0; i < user_ids.size(); i++) {
+    uint32_t user_index = std::get<0>(user_ids[i]);
+    osu_user_stats.SetCell<uint32_t>(0, i,
+                                     search_user(user_index).get_user_id());
+    osu_user_stats.SetCell<float>(1, i, search_user(user_index).get_pp_value());
+    osu_user_stats.SetCell<uint32_t>(2, i,
+                                     search_user(user_index).get_playtime());
+  }
+
+  try {
+    sample_users.Save("csv/sample_users.csv");
+    osu_user_stats.Save("csv/osu_user_stats.csv");
+  } catch (const std::exception &e) {
+    return false;
+  }
+  return true;
 }
 
 User OsuMM::search_user(uint32_t user_to_find) {
