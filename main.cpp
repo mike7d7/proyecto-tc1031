@@ -1,6 +1,5 @@
 #include "external-libs/imgui/backends/imgui_impl_sdl3.h"
 #include "external-libs/imgui/backends/imgui_impl_sdlgpu3.h"
-#include "external-libs/rapidcsv.h"
 #include "headers/osumm.hpp"
 #include "headers/user.hpp"
 #include "imgui.h"
@@ -174,33 +173,9 @@ int main(int, char **) {
   bool show_another_window = false;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-  // Cargar archivos csv
-  rapidcsv::Document doc("csv/osu_user_stats_202609212000.csv");
-  rapidcsv::Document sample_users("csv/sample_users_202609212000.csv",
-                                  rapidcsv::LabelParams(0, 0));
-
-  // Arreglos temporales con atributos
-  std::vector<uint32_t> user_ids_temp = doc.GetColumn<uint32_t>("user_id");
-  std::vector<float> pp_values = doc.GetColumn<float>("rank_score");
-  std::vector<uint32_t> user_playtimes =
-      doc.GetColumn<uint32_t>("total_seconds_played");
-
-  // Crear hashmap de users con los arreglos temporales
-  OsuMM osumm = OsuMM(user_ids_temp.size());
+  OsuMM osumm = OsuMM();
   std::unordered_map<int, User> &users = osumm.get_users();
-  for (int i = 0; i < user_ids_temp.size(); i++) {
-    std::string username = sample_users.GetCell<std::string>(
-        "username", std::to_string(user_ids_temp[i]));
-    users.insert({user_ids_temp[i], User(username, user_ids_temp[i],
-                                         pp_values[i], user_playtimes[i])});
-  }
-
-  // Crear vector con id y pp_value de Users para poder ordenar y encontrar
-  // oponente
   std::vector<std::tuple<int, int>> &user_ids = osumm.get_user_ids();
-  for (int i = 0; i < user_ids_temp.size(); i++) {
-    user_ids.push_back(std::make_tuple(user_ids_temp[i], pp_values[i]));
-  }
 
   // Id del usuario a buscar en tab 2 y 3
   uint32_t user_to_find = 0;
