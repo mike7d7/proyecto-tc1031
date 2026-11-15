@@ -281,7 +281,7 @@ int main(int, char **) {
 
       // Tab 1
       if (ImGui::BeginTabItem("Lista de jugadores")) {
-        ImGui::BeginTable("UsersTable", 4,
+        ImGui::BeginTable("UsersTable", 5,
                           ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
                               ImGuiTableFlags_Resizable |
                               ImGuiTableFlags_ScrollY |
@@ -291,6 +291,7 @@ int main(int, char **) {
         ImGui::TableSetupColumn("Username");
         ImGui::TableSetupColumn("PP");
         ImGui::TableSetupColumn("Playtime");
+        ImGui::TableSetupColumn("");
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableHeadersRow();
 
@@ -311,13 +312,12 @@ int main(int, char **) {
                    user.get_user_id());
 
           if (ImGui::Selectable(user_id_text, false,
-                                ImGuiSelectableFlags_SpanAllColumns)) {
+                                ImGuiSelectableFlags_SpanAllColumns |
+                                    ImGuiSelectableFlags_AllowOverlap)) {
             g_selected_user_id = user.get_user_id();
             open_popup = true;
             ImGui::OpenPopup("ConfirmViewUserInfo");
           }
-
-          ImGui::PopID();
 
           ImGui::TableSetColumnIndex(1);
           ImGui::TextUnformatted(user.get_username().c_str());
@@ -329,6 +329,12 @@ int main(int, char **) {
           const uint32_t hours = user.get_playtime() / 3600;
           const uint32_t minutes = (user.get_playtime() % 3600) / 60;
           ImGui::Text("%uh %02um", hours, minutes);
+
+          ImGui::TableSetColumnIndex(4);
+          if (ImGui::Button("D")) {
+            osumm.delete_user(user.get_user_id());
+          }
+          ImGui::PopID();
         }
         ImGui::EndTable();
 

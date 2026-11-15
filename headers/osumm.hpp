@@ -18,6 +18,7 @@ public:
   bool save_data();
 
   User search_user(uint32_t);
+  void delete_user(uint32_t);
 
   std::unordered_map<int, User> &get_users();
   std::vector<std::tuple<int, int>> &get_user_ids();

@@ -89,7 +89,7 @@ bool OsuMM::save_data() {
 
   for (int i = 0; i < user_ids.size(); i++) {
     uint32_t user_index = std::get<0>(user_ids[i]);
-    sample_users.SetCell<uint32_t>(0, i, search_user(user_index).get_user_id());
+    sample_users.SetCell<uint32_t>(0, i, user_index);
     sample_users.SetCell<std::string>(1, i,
                                       search_user(user_index).get_username());
   }
@@ -102,8 +102,7 @@ bool OsuMM::save_data() {
 
   for (int i = 0; i < user_ids.size(); i++) {
     uint32_t user_index = std::get<0>(user_ids[i]);
-    osu_user_stats.SetCell<uint32_t>(0, i,
-                                     search_user(user_index).get_user_id());
+    osu_user_stats.SetCell<uint32_t>(0, i, user_index);
     osu_user_stats.SetCell<float>(1, i, search_user(user_index).get_pp_value());
     osu_user_stats.SetCell<uint32_t>(2, i,
                                      search_user(user_index).get_playtime());
@@ -121,5 +120,17 @@ bool OsuMM::save_data() {
 User OsuMM::search_user(uint32_t user_to_find) {
   return users.at(user_to_find);
 }
+
+void OsuMM::delete_user(uint32_t target_user) {
+  users.erase(target_user);
+
+  for (int i = 0; i < user_ids.size(); i++) {
+    if (target_user == std::get<0>(user_ids[i])) {
+      user_ids.erase(user_ids.begin() + i);
+      return;
+    }
+  }
+}
+
 std::unordered_map<int, User> &OsuMM::get_users() { return users; };
 std::vector<std::tuple<int, int>> &OsuMM::get_user_ids() { return user_ids; }
