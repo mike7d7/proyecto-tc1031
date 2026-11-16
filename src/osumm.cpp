@@ -1,6 +1,8 @@
 #include "../headers/osumm.hpp"
 #include "../external-libs/rapidcsv.h"
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <string>
 
 OsuMM::OsuMM() {
@@ -46,6 +48,11 @@ void OsuMM::sort_users(bool desc, int attribute) {
       break;
     }
     case 1: {
+      std::string name = users[id].get_username();
+      int max_bytes = std::min(sizeof(uint32_t), name.length());
+      for (int i = 0; i < max_bytes; i++) {
+        result |= name[i] << (24 - i * 8);
+      }
       break;
     }
     case 2: {
