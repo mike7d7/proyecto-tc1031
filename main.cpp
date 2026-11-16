@@ -296,7 +296,7 @@ int main(int, char **) {
                 ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY |
                 ImGuiTableFlags_Sortable | ImGuiTableFlags_SortTristate |
                 ImGuiTableFlags_SizingStretchProp,
-            ImVec2(0.0f, 1100.0f));
+            ImVec2(0.0f, -ImGui::GetFrameHeightWithSpacing()));
         ImGui::TableSetupColumn("User ID");
         ImGui::TableSetupColumn("Username");
         ImGui::TableSetupColumn("PP");
