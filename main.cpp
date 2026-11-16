@@ -394,9 +394,11 @@ int main(int, char **) {
         ImGui::SameLine();
         ImGui::Text("Página %d", page + 1);
         ImGui::SameLine();
+        ImGui::BeginDisabled((page + 1) * 40 > (int)user_ids.size());
         if (ImGui::Button("Página siguiente")) {
           page++;
         }
+        ImGui::EndDisabled();
         float saveWidth = ImGui::CalcTextSize("Guardar cambios").x +
                           ImGui::GetStyle().FramePadding.x * 2.0f;
 
