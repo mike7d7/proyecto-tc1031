@@ -2,7 +2,6 @@
 #include "../external-libs/rapidcsv.h"
 #include <algorithm>
 #include <cstdint>
-#include <cstring>
 #include <string>
 
 OsuMM::OsuMM() {
