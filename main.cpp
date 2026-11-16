@@ -281,20 +281,43 @@ int main(int, char **) {
 
       // Tab 1
       if (ImGui::BeginTabItem("Lista de jugadores")) {
-        ImGui::BeginTable("UsersTable", 5,
-                          ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-                              ImGuiTableFlags_Resizable |
-                              ImGuiTableFlags_ScrollY |
-                              ImGuiTableFlags_SizingStretchProp,
-                          ImVec2(0.0f, 1100.0f));
+        ImGui::BeginTable(
+            "UsersTable", 5,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY |
+                ImGuiTableFlags_Sortable | ImGuiTableFlags_SortTristate |
+                ImGuiTableFlags_SizingStretchProp,
+            ImVec2(0.0f, 1100.0f));
         ImGui::TableSetupColumn("User ID");
         ImGui::TableSetupColumn("Username");
         ImGui::TableSetupColumn("PP");
         ImGui::TableSetupColumn("Playtime");
-        ImGui::TableSetupColumn("");
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_NoSort);
         ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableHeadersRow();
 
+        ImGui::TableHeadersRow();
+        if (ImGuiTableSortSpecs *sort_specs = ImGui::TableGetSortSpecs()) {
+          if (sort_specs->SpecsDirty) {
+            if (sort_specs->SpecsCount > 0) {
+              const ImGuiTableColumnSortSpecs *spec = &sort_specs->Specs[0];
+
+              switch (spec->ColumnIndex) {
+              case 2:
+                bool desc;
+                if (spec->SortDirection == ImGuiSortDirection_Ascending) {
+                  desc = false;
+                } else {
+                  desc = true;
+                }
+                osumm.sort_users_by_skill(desc);
+                break;
+              default:
+              }
+            }
+
+            sort_specs->SpecsDirty = false;
+          }
+        }
         static int page = 0;
         int max_entries = std::min((page + 1) * 40, (int)user_ids.size());
         bool open_popup = false;
@@ -407,7 +430,7 @@ int main(int, char **) {
 
           try {
             auto found_user = osumm.search_user(user_to_find);
-            osumm.sort_users_by_skill();
+            osumm.sort_users_by_skill(false);
             int user_index = 0;
             bool found = false;
             while (!found) {

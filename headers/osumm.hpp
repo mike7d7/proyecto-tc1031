@@ -11,7 +11,7 @@ private:
   std::vector<int> user_ids; // id
 
 public:
-  void sort_users_by_skill();
+  void sort_users_by_skill(bool);
   OsuMM();
 
   bool save_data();

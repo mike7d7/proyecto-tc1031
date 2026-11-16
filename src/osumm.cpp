@@ -35,7 +35,7 @@ OsuMM::OsuMM() {
 }
 
 // Ordena usuarios en base a su habilidad (menor a mayor)
-void OsuMM::sort_users_by_skill() {
+void OsuMM::sort_users_by_skill(bool desc) {
   std::vector<int> buffer(user_ids.size());
 
   for (int shift = 0; shift < 32; shift += 8) {
@@ -49,6 +49,9 @@ void OsuMM::sort_users_by_skill() {
       bits = *(uint32_t *)&pp;
 
       uint32_t radix_index = (bits >> shift) & 0xFF;
+      if (desc) {
+        radix_index = 255 - radix_index;
+      }
       radix_array[radix_index] += 1;
     }
 
@@ -67,7 +70,10 @@ void OsuMM::sort_users_by_skill() {
       uint32_t bits;
       bits = *(uint32_t *)&pp;
 
-      const uint32_t bucket = (bits >> shift) & 0xFF;
+      uint32_t bucket = (bits >> shift) & 0xFF;
+      if (desc) {
+        bucket = 255 - bucket;
+      }
 
       uint32_t current_index = position_in_buffer[bucket];
       buffer[current_index] = user_id;
