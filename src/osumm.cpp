@@ -6,8 +6,8 @@
 
 OsuMM::OsuMM() {
   // Cargar archivos csv
-  rapidcsv::Document doc("csv/osu_user_stats_202609212000.csv");
-  rapidcsv::Document sample_users("csv/sample_users_202609212000.csv",
+  rapidcsv::Document doc("csv/osu_user_stats.csv");
+  rapidcsv::Document sample_users("csv/sample_users.csv",
                                   rapidcsv::LabelParams(0, 0));
 
   // Arreglos temporales con atributos
@@ -111,13 +111,6 @@ bool OsuMM::save_data() {
   sample_users.SetColumnName(2, "user_warnings");
   sample_users.SetColumnName(3, "user_type");
 
-  for (int i = 0; i < user_ids.size(); i++) {
-    uint32_t user_index = user_ids[i];
-    sample_users.SetCell<uint32_t>(0, i, user_index);
-    sample_users.SetCell<std::string>(1, i,
-                                      search_user(user_index).get_username());
-  }
-
   // osu_user_stats file
   rapidcsv::Document osu_user_stats;
   osu_user_stats.SetColumnName(0, "user_id");
@@ -126,12 +119,19 @@ bool OsuMM::save_data() {
 
   for (int i = 0; i < user_ids.size(); i++) {
     uint32_t user_index = user_ids[i];
+    // sample_users data
+    sample_users.SetCell<uint32_t>(0, i, user_index);
+    sample_users.SetCell<std::string>(1, i,
+                                      search_user(user_index).get_username());
+
+    // osu_user_stats data
     osu_user_stats.SetCell<uint32_t>(0, i, user_index);
     osu_user_stats.SetCell<float>(1, i, search_user(user_index).get_pp_value());
     osu_user_stats.SetCell<uint32_t>(2, i,
                                      search_user(user_index).get_playtime());
   }
 
+  // Write file to disk
   try {
     sample_users.Save("csv/sample_users.csv");
     osu_user_stats.Save("csv/osu_user_stats.csv");
