@@ -175,7 +175,7 @@ int main(int, char **) {
 
   OsuMM osumm = OsuMM();
   std::unordered_map<int, User> &users = osumm.get_users();
-  std::vector<std::tuple<int, int>> &user_ids = osumm.get_user_ids();
+  std::vector<int> &user_ids = osumm.get_user_ids();
 
   // Id del usuario a buscar en tab 2 y 3
   uint32_t user_to_find = 0;
@@ -300,7 +300,7 @@ int main(int, char **) {
         bool open_popup = false;
 
         for (int i = page * 40; i < max_entries; i++) {
-          const User &user = users[std::get<0>(user_ids[i])];
+          const User &user = users[user_ids[i]];
 
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
@@ -411,7 +411,7 @@ int main(int, char **) {
             int user_index = 0;
             bool found = false;
             while (!found) {
-              if (std::get<0>(user_ids[user_index]) != user_to_find) {
+              if (user_ids[user_index] != user_to_find) {
                 user_index++;
               } else {
                 found = true;
@@ -424,8 +424,7 @@ int main(int, char **) {
               rival_index = user_index + 1;
             }
             try {
-              User rival_user =
-                  osumm.search_user(std::get<0>(user_ids[rival_index]));
+              User rival_user = osumm.search_user(user_ids[rival_index]);
 
               ImGui::SetWindowFontScale(2.0f);
               ImGui::Text("Usuario Buscado:");

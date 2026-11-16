@@ -2,7 +2,6 @@
 #include "../external-libs/rapidcsv.h"
 #include <cstdint>
 #include <string>
-#include <tuple>
 
 OsuMM::OsuMM() {
   // Cargar archivos csv
@@ -31,19 +30,19 @@ OsuMM::OsuMM() {
   // Crear vector con id y pp_value de Users para poder ordenar y encontrar
   // oponente
   for (int i = 0; i < user_ids_temp.size(); i++) {
-    user_ids.push_back(std::make_tuple(user_ids_temp[i], pp_values[i]));
+    user_ids.push_back(user_ids_temp[i]);
   }
 }
 
 // Ordena usuarios en base a su habilidad (menor a mayor)
 void OsuMM::sort_users_by_skill() {
-  std::vector<std::tuple<int, int>> buffer(user_ids.size());
+  std::vector<int> buffer(user_ids.size());
 
   for (int shift = 0; shift < 32; shift += 8) {
     uint32_t radix_array[256] = {};
 
-    for (const std::tuple<int, int> &user_id : user_ids) {
-      float pp = std::get<1>(user_id);
+    for (const int &user_id : user_ids) {
+      float pp = users[user_id].get_pp_value();
 
       // Cast bytes from pp_value (float) as an int
       uint32_t bits;
@@ -62,8 +61,8 @@ void OsuMM::sort_users_by_skill() {
     }
 
     // Move values into buffer
-    for (const std::tuple<int, int> &user_id : user_ids) {
-      float pp = std::get<1>(user_id);
+    for (const int &user_id : user_ids) {
+      float pp = users[user_id].get_pp_value();
 
       uint32_t bits;
       bits = *(uint32_t *)&pp;
@@ -88,7 +87,7 @@ bool OsuMM::save_data() {
   sample_users.SetColumnName(3, "user_type");
 
   for (int i = 0; i < user_ids.size(); i++) {
-    uint32_t user_index = std::get<0>(user_ids[i]);
+    uint32_t user_index = user_ids[i];
     sample_users.SetCell<uint32_t>(0, i, user_index);
     sample_users.SetCell<std::string>(1, i,
                                       search_user(user_index).get_username());
@@ -101,7 +100,7 @@ bool OsuMM::save_data() {
   osu_user_stats.SetColumnName(2, "total_seconds_played");
 
   for (int i = 0; i < user_ids.size(); i++) {
-    uint32_t user_index = std::get<0>(user_ids[i]);
+    uint32_t user_index = user_ids[i];
     osu_user_stats.SetCell<uint32_t>(0, i, user_index);
     osu_user_stats.SetCell<float>(1, i, search_user(user_index).get_pp_value());
     osu_user_stats.SetCell<uint32_t>(2, i,
@@ -125,7 +124,7 @@ void OsuMM::delete_user(uint32_t target_user) {
   users.erase(target_user);
 
   for (int i = 0; i < user_ids.size(); i++) {
-    if (target_user == std::get<0>(user_ids[i])) {
+    if (target_user == user_ids[i]) {
       user_ids.erase(user_ids.begin() + i);
       return;
     }
@@ -133,4 +132,4 @@ void OsuMM::delete_user(uint32_t target_user) {
 }
 
 std::unordered_map<int, User> &OsuMM::get_users() { return users; };
-std::vector<std::tuple<int, int>> &OsuMM::get_user_ids() { return user_ids; }
+std::vector<int> &OsuMM::get_user_ids() { return user_ids; }
