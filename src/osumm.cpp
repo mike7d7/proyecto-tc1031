@@ -7,31 +7,24 @@
 OsuMM::OsuMM() {
   // Cargar archivos csv
   rapidcsv::Document doc("csv/osu_user_stats.csv");
-  rapidcsv::Document sample_users("csv/sample_users.csv",
-                                  rapidcsv::LabelParams(0, 0));
+  rapidcsv::Document sample_users("csv/sample_users.csv");
+
+  user_ids = doc.GetColumn<int>("user_id");
 
   // Arreglos temporales con atributos
-  std::vector<uint32_t> user_ids_temp = doc.GetColumn<uint32_t>("user_id");
   std::vector<float> pp_values = doc.GetColumn<float>("rank_score");
   std::vector<uint32_t> user_playtimes =
       doc.GetColumn<uint32_t>("total_seconds_played");
+  std::vector<std::string> usernames =
+      sample_users.GetColumn<std::string>("username");
 
   // Preasignar memoria
-  users.reserve(user_ids_temp.size());
-  user_ids.reserve(user_ids_temp.size());
+  users.reserve(user_ids.size());
 
   // Crear hashmap de users con los arreglos temporales
-  for (int i = 0; i < user_ids_temp.size(); i++) {
-    std::string username = sample_users.GetCell<std::string>(
-        "username", std::to_string(user_ids_temp[i]));
-    users.insert({user_ids_temp[i], User(username, user_ids_temp[i],
-                                         pp_values[i], user_playtimes[i])});
-  }
-
-  // Crear vector con id y pp_value de Users para poder ordenar y encontrar
-  // oponente
-  for (int i = 0; i < user_ids_temp.size(); i++) {
-    user_ids.push_back(user_ids_temp[i]);
+  for (int i = 0; i < user_ids.size(); i++) {
+    users.insert({user_ids[i], User(usernames[i], user_ids[i], pp_values[i],
+                                    user_playtimes[i])});
   }
 }
 
