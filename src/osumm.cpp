@@ -34,20 +34,38 @@ OsuMM::OsuMM() {
   }
 }
 
-// Ordena usuarios en base a su habilidad (menor a mayor)
-void OsuMM::sort_users_by_skill(bool desc) {
+// Ordena usuarios en base a un atributo seleccionado
+void OsuMM::sort_users(bool desc, int attribute) {
   std::vector<int> buffer(user_ids.size());
+
+  auto get_value_to_compare = [&](uint32_t id) {
+    uint32_t result = 0;
+    switch (attribute) {
+    case 0: {
+      result = users[id].get_user_id();
+      break;
+    }
+    case 1: {
+      break;
+    }
+    case 2: {
+      float pp = users[id].get_pp_value();
+      result = *(uint32_t *)&pp;
+      break;
+    }
+    case 3: {
+      result = users[id].get_playtime();
+      break;
+    }
+    }
+    return result;
+  };
 
   for (int shift = 0; shift < 32; shift += 8) {
     uint32_t radix_array[256] = {};
 
     for (const int &user_id : user_ids) {
-      float pp = users[user_id].get_pp_value();
-
-      // Cast bytes from pp_value (float) as an int
-      uint32_t bits;
-      bits = *(uint32_t *)&pp;
-
+      uint32_t bits = get_value_to_compare(user_id);
       uint32_t radix_index = (bits >> shift) & 0xFF;
       if (desc) {
         radix_index = 255 - radix_index;
@@ -65,16 +83,11 @@ void OsuMM::sort_users_by_skill(bool desc) {
 
     // Move values into buffer
     for (const int &user_id : user_ids) {
-      float pp = users[user_id].get_pp_value();
-
-      uint32_t bits;
-      bits = *(uint32_t *)&pp;
-
+      uint32_t bits = get_value_to_compare(user_id);
       uint32_t bucket = (bits >> shift) & 0xFF;
       if (desc) {
         bucket = 255 - bucket;
       }
-
       uint32_t current_index = position_in_buffer[bucket];
       buffer[current_index] = user_id;
 

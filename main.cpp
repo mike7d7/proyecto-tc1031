@@ -13,7 +13,6 @@
 #include <stdio.h>  // printf, fprintf
 #include <stdlib.h> // abort
 #include <string>
-#include <tuple>
 #include <vector>
 
 // This example doesn't compile with Emscripten yet! Awaiting SDL3 support.
@@ -300,19 +299,13 @@ int main(int, char **) {
           if (sort_specs->SpecsDirty) {
             if (sort_specs->SpecsCount > 0) {
               const ImGuiTableColumnSortSpecs *spec = &sort_specs->Specs[0];
-
-              switch (spec->ColumnIndex) {
-              case 2:
-                bool desc;
-                if (spec->SortDirection == ImGuiSortDirection_Ascending) {
-                  desc = false;
-                } else {
-                  desc = true;
-                }
-                osumm.sort_users_by_skill(desc);
-                break;
-              default:
+              bool desc;
+              if (spec->SortDirection == ImGuiSortDirection_Ascending) {
+                desc = false;
+              } else {
+                desc = true;
               }
+              osumm.sort_users(desc, spec->ColumnIndex);
             }
 
             sort_specs->SpecsDirty = false;
@@ -430,7 +423,7 @@ int main(int, char **) {
 
           try {
             auto found_user = osumm.search_user(user_to_find);
-            osumm.sort_users_by_skill(false);
+            osumm.sort_users(false, 2);
             int user_index = 0;
             bool found = false;
             while (!found) {
