@@ -118,17 +118,17 @@ bool OsuMM::save_data() {
   osu_user_stats.SetColumnName(2, "total_seconds_played");
 
   for (int i = 0; i < user_ids.size(); i++) {
-    uint32_t user_index = user_ids[i];
+    const uint32_t user_index = user_ids[i];
+    const User &current_user = search_user(user_index);
+
     // sample_users data
     sample_users.SetCell<uint32_t>(0, i, user_index);
-    sample_users.SetCell<std::string>(1, i,
-                                      search_user(user_index).get_username());
+    sample_users.SetCell<std::string>(1, i, current_user.get_username());
 
     // osu_user_stats data
     osu_user_stats.SetCell<uint32_t>(0, i, user_index);
-    osu_user_stats.SetCell<float>(1, i, search_user(user_index).get_pp_value());
-    osu_user_stats.SetCell<uint32_t>(2, i,
-                                     search_user(user_index).get_playtime());
+    osu_user_stats.SetCell<float>(1, i, current_user.get_pp_value());
+    osu_user_stats.SetCell<uint32_t>(2, i, current_user.get_playtime());
   }
 
   // Write file to disk
