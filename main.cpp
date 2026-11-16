@@ -248,7 +248,17 @@ int main(int, char **) {
                            "1. Lista de jugadores");
         ImGui::TextWrapped(
             "Visualiza información general de múltiples jugadores, utiliza los "
-            "botones de cambio página para recorrer la lista.");
+            "botones de cambio página para recorrer la lista. Al presionar los "
+            "títulos, la lista se ordena por el atributo presionado y cambia "
+            "entre orden ascendente, descendente y sin ordenar.");
+        ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.65f, 1.0f),
+                           "    1.1. Eliminar jugador");
+        ImGui::TextWrapped(
+            "    En la tabla, en la columna de más a la derecha, se encuentra "
+            "un botón, que al presionarlo elimina al usuario correspondiente "
+            "del programa. Estos cambios son temporales hasta que se presiona "
+            "el botón de \"Guardar cambios\"");
+
         ImGui::Spacing();
 
         ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.65f, 1.0f),
