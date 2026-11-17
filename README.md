@@ -6,7 +6,7 @@ Estos puntos de rendimientos se vuelven un reflejo de la habilidad de cada jugad
 ## Librerías externas
 En la carpeta `external-libs/` se encuentran códigos externos que se utilizan para facilitar el desarrollo del programa.
 Las librerías utilizadas y su propósito son las siguientes:
-- [rapidcsv](https://github.com/d99kris/rapidcsv/tree/cbd8a0a937b249cc07e2db3bfa9cd2cc1689708f): Utilizada para leer los valores de los archivos CSV de forma sencilla.
+- [rapidcsv](https://github.com/d99kris/rapidcsv/tree/cbd8a0a937b249cc07e2db3bfa9cd2cc1689708f): Utilizada para leer y escribir valores de/a los archivos CSV de forma sencilla.
 - [Dear ImGui](https://github.com/ocornut/imgui): Librería para la interfaz gráfica (GUI). Se agregó como un submódulo de git en la carpeta `external-libs/imgui`.
     - [SDL3](https://wiki.libsdl.org/SDL3/FrontPage): Backend/Renderizador elegido para la interfaz gráfica.
     - [Ejemplo ImGui-SDL3GPU](https://github.com/ocornut/imgui/tree/master/examples/example_sdl3_sdlgpu3): Sirvió como base para el código que conecta a Dear ImGui con SDL3 al igual que para el `Makefile`.
@@ -26,6 +26,15 @@ El primer avance consiste en lo siguiente:
 
 ### Cambios sobre el primer avance
 - Ahora se utiliza una interfaz gráfica de usuario (GUI) hecha con [Dear ImGui](https://github.com/ocornut/imgui).
+
+## Descripción del avance 3
+- Se agregó un botón de "Guardar cambios", que sobreescribe el archivo `.csv` con los cambios realizados.
+- Se agregó la funcionalidad de eliminar usuarios.
+
+### Cambios sobre el segundo avance
+- Ahora el constructor de la clase `OsuMM` se encarga de cargar los datos desde los archivos en lugar de hacerlo desde `main()`.
+- El vector de ayuda en la clase `OsuMM` paso de tener `tuple<int, int>` a solo `int`, ya que me di cuenta que se pueden acceder a los datos del unordered_map en la función de sort, que es en la que necesitaba el segundo valor en el vector.
+- La función `sort_users_by_skill()` fue cambiada por `sort_users()`, ya que se agregó la funcionalidad de ordenar la lista de usuarios por otros atributos además de su habilidad.
 
 ## Instrucciones para compilar el avance de proyecto
 Se asume que ya se tiene la librería de `SDL3` instalada.
@@ -101,6 +110,30 @@ En el vector esto sucede cuando el elemento que se necesita es el último, por l
 
 La complejidad espacial de ambas estructuras es `O(n)` debido a que su tamaño escala con el número de elementos que contengan.
 
+#### Hace un análisis de complejidad correcto y completo para todos los demás componentes del programa y determina la complejidad final del programa.
+- Clase OsuMM
+    - Constructor
+
+       Tiene complejidad temporal lineal `O(n + k)`, donde n es el número de filas en el primer archivo csv y k es el número de filas en el segundo archivo csv. Esto porque leer los archivos csv es `O(n)`, al igual que crear los vectores temporales y llenar el hashmap. Como ninguna de estas operaciones está anidada, se mantiene la complejidad temporal lineal. La complejidad de memoria también es lineal, debido a que se tiene que leer y guardar cada elemento de los archivos csv.
+
+    - `save_data()`
+      
+      Tiene complejidad temporal `O(n)` debido a que tiene que recorrer todos los elementos para agregarlos al archivo a guardar. Esto se hace con un ciclo *for*. Dentro de este ciclo solo se utilizan operaciones con complejidad constante (`search_user` es constante debido a que utiliza la llave para obtener un valor de un hashmap). En complejidad espacial se necesita `O(n)` ya que los `rapidcsv::Document` guardan en memoria todos los elementos antes de escribirlos a disco.
+
+    - `delete_user()`
+
+        Su complejidad temporal es `O(n)` ya que se tiene que buscar el id del usuario en el vector `user_ids` y luego eliminarlo, ambas operaciones son lineales. El borrado del hashmap `users` es en promedio `O(1)` pero tiene un peor caso de `O(n)` si hay muchas colisiones en la tabla. Como estas operaciones no están anidadas, la complejidad temporal de toda la función es `O(n)`. Como no se necesita espacio adicional de memoria, su complejidad es de `O(1)`.
+    
+- Acciones específicas
+
+| Acción | Complejidad temporal | Complejidad espacial | Argumentación |
+|--|--|--|--|
+| Ver lista de jugadores | `O(n + k)` | `O(n + k)` | Se utiliza el constructor de la clase `OsuMM` |
+| Ordenar jugadores por algún atributo | `O(nk)` | `O(n)` | Se utiliza el RadixSort descrito anteriormente |
+| Consultar información de un jugador | `O(1)` | `O(1)` | Se consulta información de un hashmap utilizando su llave |
+| Buscar oponente | `O(n)` | `O(1)` | Se necesita buscar el id del jugador en un vector y consultar su información de el hashmap. Encontrar su oponente es constante ya que se hace con una suma/resta de índice en el vector.
+
+
 ### SICT0302: Toma decisiones
 #### Selecciona un algoritmo de ordenamiento adecuado al problema y lo usa correctamente.
 El algoritmo de ordenamiento utilizado en el proyecto es RadixSort. La elección de este algoritmo de debió principalmente a su complejidad temporal lineal. Esta complejidad indica que es un algoritmo más rápido que otros como QuickSort (Promedio: `O(nlog(n))`), MergeSort (Promedio: `O(nlog(n))`), Bubble/Insertion sort (Promedio: `O(n^2)`). Esto se debe a que es un algoritmo de ordenamiento sin comparaciones, por lo que logra su complejidad temporal lineal. 
@@ -115,6 +148,9 @@ La estructura de datos principal que utilicé en el programa es el HashMap (`uno
 El programa consulta y muestra la información general de múltiples usuarios en la pestaña de "Lista de jugadores". En la pestaña de "Información de jugador" se busca un jugador en base a su ID y se muestra su información específica, esto también sucede en la pestaña de "Encontrar oponente", en donde se muestra la información del jugador especificado, al igual que la información del oponente el cual se encuentra buscando otro jugador con un valor similar de puntos de rendimiento.
 
 #### Implementa mecanismos de lectura de archivos para cargar datos a las estructuras de manera correcta.
-El programa carga al iniciar (línea 143 en `main.cpp`) los datos de los usuarios desde archivos csv (descritos a detalle en las entradas del poyecto), los cuales están basados en la base de datos real de osu!. 
+El programa carga al iniciar (constructor en `osumm.cpp`) los datos de los usuarios desde archivos csv (descritos a detalle en las entradas del poyecto), los cuales están basados en la base de datos real de osu!. 
 
 Los datos se guardan en objetos de la clase `User`, la cual representa a un jugador junto a sus datos importantes (nombre de usuario, puntos de rendiemiento, tiempo de juego), los cuales son guardados como atributos. El conjunto de todos los `User`s con sus respectivos datos son guardados en el atributo `users` de la clase `OsuMM`.
+
+#### Implementa mecanismos de escritura de archivos para guardar los datos de las estructuras de manera correcta.
+En la pestaña de "Lista de jugadores" en la parte inferior derecha se encuentra el botón de "Guardar cambios". Este botón llama la función `save_data()` de la clase `OsuMM` (definida en la línea 99 de `src/osumm.cpp`). Esta función lee cada id del vector `user_ids` y sus atributos correspondientes del hashmap `users`. Con ayuda de la librería *rapidcsv* sobreescribo los archivos originales con el mismo formato para guardar los datos modificados.
