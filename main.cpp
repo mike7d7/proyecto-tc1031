@@ -105,6 +105,8 @@ int main(int, char **) {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
+  io.Fonts->AddFontFromFileTTF("external-libs/FiraCodeNerdFontMono-Retina.ttf",
+                               16.0f);
   (void)io;
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
@@ -357,7 +359,7 @@ int main(int, char **) {
           ImGui::Text("%uh %02um", hours, minutes);
 
           ImGui::TableSetColumnIndex(4);
-          if (ImGui::Button("D")) {
+          if (ImGui::Button("\uee23")) {
             osumm.delete_user(user.get_user_id());
           }
           ImGui::PopID();
